@@ -1,5 +1,7 @@
 // Function to create the context menu
 function setupContextMenu() {
+  // Using chrome.contextMenus.create without checking for existence
+  // is fine inside onInstalled, as it runs only once.
   chrome.contextMenus.create({
     id: "izy-zap-open",
     title: 'Abrir com Izy Zap',
@@ -7,7 +9,7 @@ function setupContextMenu() {
   });
 }
 
-// Setup the menu when the extension is installed or updated
+// Setup the menu when the extension is installed
 chrome.runtime.onInstalled.addListener(() => {
   setupContextMenu();
 });
@@ -17,17 +19,17 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "izy-zap-open") {
     const selectedText = info.selectionText;
     if (selectedText) {
-      // Basic cleaning: remove non-digit characters
-      // This assumes the selected text is mostly a phone number.
       const phoneNumber = selectedText.replace(/\D/g, '');
 
       if (phoneNumber) {
-        // For now, we'll use a default country code.
-        // A more advanced implementation could involve checking storage for a user-set default.
-        const countryCode = "55";
-        const url = `https://wa.me/${countryCode}${phoneNumber}`;
+        // Fetch the last used numeric DDI from storage
+        chrome.storage.local.get(['lastNumericDDI'], function(result) {
+          // Use the stored code, or fallback to '55' if not present
+          const countryCode = result.lastNumericDDI || '55';
 
-        chrome.tabs.create({ url: url });
+          const url = `https://wa.me/${countryCode}${phoneNumber}`;
+          chrome.tabs.create({ url: url });
+        });
       }
     }
   }

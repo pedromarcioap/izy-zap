@@ -1,10 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Views
+  // --- DOM Elements ---
   const inputView = document.getElementById('inputView');
   const optionsView = document.getElementById('optionsView');
   const qrCodeView = document.getElementById('qrCodeView');
 
-  // Buttons
   const generateLinkButton = document.getElementById('generateLinkButton');
   const openTabButton = document.getElementById('openTabButton');
   const copyLinkButton = document.getElementById('copyLinkButton');
@@ -12,31 +11,63 @@ document.addEventListener('DOMContentLoaded', function () {
   const backButton = document.getElementById('backButton');
   const qrBackButton = document.getElementById('qrBackButton');
 
-  // Inputs
-  const countryCodeInput = document.getElementById('countryCode');
+  const countryCodeInput = document.getElementById('countryCodeInput');
+  const countryCodesList = document.getElementById('countryCodesList');
   const phoneNumberInput = document.getElementById('phoneNumber');
   const messageInput = document.getElementById('prewrittenMessage');
 
-  // QR Code Container
   const qrCodeContainer = document.getElementById('qrCodeContainer');
 
+  // --- State ---
   let currentUrl = '';
-  let qrcode = null; // To hold the QRCode instance
+  let qrcode = null;
+  let countries = [];
 
-  // --- Storage Functions ---
-  function saveCountryCode(code) {
-    chrome.storage.local.set({ savedCountryCode: code });
+  // --- Functions ---
+  async function loadAndPopulateCountries() {
+    try {
+      const response = await fetch('countries.json');
+      countries = await response.json();
+
+      countries.forEach(country => {
+        const option = document.createElement('option');
+        option.value = `${country.flag} ${country.name} (+${country.code})`;
+        option.dataset.code = country.code; // Use data-code for the numeric value
+        countryCodesList.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Could not load countries data:", error);
+    }
   }
 
-  function loadCountryCode() {
-    chrome.storage.local.get(['savedCountryCode'], function(result) {
-      if (result.savedCountryCode) {
-        countryCodeInput.value = result.savedCountryCode;
+  function parseCountryCode(inputValue) {
+    if (!inputValue) return null;
+    const selectedOption = Array.from(countryCodesList.options).find(opt => opt.value === inputValue);
+    if (selectedOption && selectedOption.dataset.code) {
+      return selectedOption.dataset.code;
+    }
+    const digits = inputValue.replace(/\D/g, '');
+    return digits || null;
+  }
+
+  function saveLastDDI(numericCode) {
+    chrome.storage.local.set({ lastNumericDDI: numericCode });
+  }
+
+  function loadLastDDI() {
+    chrome.storage.local.get(['lastNumericDDI'], function(result) {
+      if (result.lastNumericDDI) {
+        const foundCountry = countries.find(c => c.code === result.lastNumericDDI);
+        if (foundCountry) {
+          countryCodeInput.value = `${foundCountry.flag} ${foundCountry.name} (+${foundCountry.code})`;
+        } else {
+            // If the saved code isn't in our list, just show the code.
+            countryCodeInput.value = result.lastNumericDDI;
+        }
       }
     });
   }
 
-  // --- View Management ---
   function showView(viewToShow) {
     inputView.classList.add('hidden');
     optionsView.classList.add('hidden');
@@ -46,23 +77,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- Event Listeners ---
   generateLinkButton.addEventListener('click', function() {
+    const ddiValue = countryCodeInput.value;
     const phoneNumber = phoneNumberInput.value;
-    const countryCode = countryCodeInput.value;
     const message = messageInput.value.trim();
 
-    if (phoneNumber && phoneNumber.trim() !== '') {
-      const cleanedNumber = phoneNumber.replace(/\D/g, '');
-      let baseUrl = `https://wa.me/${countryCode}${cleanedNumber}`;
+    const countryCode = parseCountryCode(ddiValue);
+    const cleanedNumber = phoneNumber.replace(/\D/g, '');
 
+    if (countryCode && cleanedNumber) {
+      let baseUrl = `https://wa.me/${countryCode}${cleanedNumber}`;
       if (message) {
         baseUrl += `?text=${encodeURIComponent(message)}`;
       }
-
       currentUrl = baseUrl;
-      saveCountryCode(countryCode);
+      saveLastDDI(countryCode); // Save the numeric code
       showView(optionsView);
     } else {
-      phoneNumberInput.focus();
+      if (!countryCode) countryCodeInput.focus();
+      else phoneNumberInput.focus();
     }
   });
 
@@ -74,23 +106,19 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   qrBackButton.addEventListener('click', function() {
-    showView(optionsView); // Go back to the options view
+    showView(optionsView);
   });
 
   openTabButton.addEventListener('click', function() {
-    if (currentUrl) {
-      chrome.tabs.create({ url: currentUrl });
-    }
+    if (currentUrl) chrome.tabs.create({ url: currentUrl });
   });
 
   copyLinkButton.addEventListener('click', function() {
     if (currentUrl) {
-      navigator.clipboard.writeText(currentUrl).then(function() {
+      navigator.clipboard.writeText(currentUrl).then(() => {
         copyLinkButton.textContent = 'Copiado!';
-        setTimeout(function() {
-          copyLinkButton.textContent = 'Copiar link';
-        }, 1500);
-      }).catch(function(err) {
+        setTimeout(() => { copyLinkButton.textContent = 'Copiar link'; }, 1500);
+      }).catch(err => {
         console.error('Could not copy text: ', err);
         copyLinkButton.textContent = 'Erro ao copiar';
       });
@@ -99,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   generateQrButton.addEventListener('click', function() {
     if (currentUrl) {
-      qrCodeContainer.innerHTML = ''; // Clear previous QR code
+      qrCodeContainer.innerHTML = '';
       qrcode = new QRCode(qrCodeContainer, {
         text: currentUrl,
         width: 200,
@@ -118,5 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // --- Initial Load ---
-  loadCountryCode();
+  async function initialize() {
+    await loadAndPopulateCountries();
+    loadLastDDI();
+  }
+
+  initialize();
 });

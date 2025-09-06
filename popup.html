@@ -11,7 +11,7 @@
     }
     body {
       font-family: sans-serif;
-      width: 280px;
+      width: 320px; /* A bit wider for the new input */
       min-height: 150px;
       padding: 15px;
       background-color: #f4f4f4;
@@ -35,35 +35,31 @@
     }
 
     /* Input View */
-    .phone-input-group {
+    .input-group {
       display: flex;
+      flex-direction: column;
       margin-bottom: 10px;
+      text-align: left;
     }
-    .phone-input-group select {
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-right: none;
-      border-radius: 4px 0 0 4px;
-      background-color: #fff;
+    .input-group label {
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: #555;
     }
-    .phone-input-group input {
-      flex-grow: 1;
-      border: 1px solid #ddd;
-      padding: 8px;
-      border-radius: 0 4px 4px 0;
-    }
-    #inputView textarea {
+    .input-group input, .input-group textarea {
       width: 100%;
       padding: 8px;
-      margin-bottom: 10px;
       border: 1px solid #ddd;
       border-radius: 4px;
+    }
+    #inputView textarea {
       resize: vertical;
       min-height: 60px;
     }
     #inputView #generateLinkButton {
       background-color: #25D366;
       color: white;
+      margin-top: 10px;
     }
     #inputView #generateLinkButton:hover {
       background-color: #128C7E;
@@ -105,20 +101,25 @@
   <!-- View 1: Input -->
   <div id="inputView">
     <h3>Izy Zap</h3>
-    <div class="phone-input-group">
-      <select id="countryCode">
-        <option value="55" selected>🇧🇷 +55</option>
-        <option value="1">🇺🇸 +1</option>
-        <option value="351">🇵🇹 +351</option>
-        <option value="44">🇬🇧 +44</option>
-        <option value="49">🇩🇪 +49</option>
-        <option value="34">🇪🇸 +34</option>
-        <option value="39">🇮🇹 +39</option>
-        <option value="81">🇯🇵 +81</option>
-      </select>
-      <input type="tel" id="phoneNumber" placeholder="Seu número">
+    <div class="input-group">
+      <label for="countryCodeInput">País (DDI)</label>
+      <input type="text" id="countryCodeInput" list="countryCodesList" placeholder="Selecione ou digite o país/código">
+      <datalist id="countryCodesList">
+        <!-- This list will be populated by JS, but some examples are here -->
+        <option data-value="55">🇧🇷 Brasil (+55)</option>
+        <option data-value="1">🇺🇸 Estados Unidos (+1)</option>
+        <option data-value="351">🇵🇹 Portugal (+351)</option>
+        <option data-value="44">🇬🇧 Reino Unido (+44)</option>
+      </datalist>
     </div>
-    <textarea id="prewrittenMessage" placeholder="Digite uma mensagem opcional..."></textarea>
+    <div class="input-group">
+      <label for="phoneNumber">Telefone (com DDD)</label>
+      <input type="tel" id="phoneNumber" placeholder="Ex: 11999998888">
+    </div>
+    <div class="input-group">
+      <label for="prewrittenMessage">Mensagem (opcional)</label>
+      <textarea id="prewrittenMessage"></textarea>
+    </div>
     <button id="generateLinkButton">Gerar Link</button>
   </div>
 
