@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
       countries.forEach(country => {
         const option = document.createElement('option');
         option.value = `${country.flag} ${country.name} (+${country.code})`;
-        option.dataset.code = country.code; // Use data-code for the numeric value
+        option.dataset.code = country.code;
         countryCodesList.appendChild(option);
       });
     } catch (error) {
