@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // --- Functions ---
   async function loadAndPopulateCountries() {
     try {
-      const response = await fetch('countries.json');
+      const url = chrome.runtime.getURL('countries.json');
+      const response = await fetch(url);
       countries = await response.json();
 
       countries.forEach(country => {
@@ -77,6 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- Event Listeners ---
   generateLinkButton.addEventListener('click', function() {
+    const originalButtonText = generateLinkButton.textContent;
+    generateLinkButton.textContent = 'Processando...';
+
     const ddiValue = countryCodeInput.value;
     const phoneNumber = phoneNumberInput.value;
     const message = messageInput.value.trim();
@@ -92,9 +96,11 @@ document.addEventListener('DOMContentLoaded', function () {
       currentUrl = baseUrl;
       saveLastDDI(countryCode); // Save the numeric code
       showView(optionsView);
+      generateLinkButton.textContent = originalButtonText; // Restore on success
     } else {
       if (!countryCode) countryCodeInput.focus();
       else phoneNumberInput.focus();
+      generateLinkButton.textContent = originalButtonText; // Restore on failure
     }
   });
 
