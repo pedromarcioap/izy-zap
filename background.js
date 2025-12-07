@@ -27,7 +27,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
           // Use the stored code, or fallback to '55' if not present
           const countryCode = result.lastNumericDDI || '55';
 
-          const url = `https://wa.me/${countryCode}${phoneNumber}`;
+          const url = `https://web.whatsapp.com/send/?phone=${countryCode}${phoneNumber}`;
           chrome.tabs.create({ url: url });
         });
       }
