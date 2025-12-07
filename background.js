@@ -28,7 +28,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
           const countryCode = result.lastNumericDDI || '55';
 
           const url = `https://web.whatsapp.com/send/?phone=${countryCode}${phoneNumber}`;
-          chrome.tabs.create({ url: url });
+
+          chrome.tabs.query({ url: "https://web.whatsapp.com/*" }, (tabs) => {
+            if (tabs && tabs.length > 0) {
+              const tab = tabs[0];
+              chrome.tabs.update(tab.id, { url: url, active: true });
+              chrome.windows.update(tab.windowId, { focused: true });
+            } else {
+              chrome.tabs.create({ url: url });
+            }
+          });
         });
       }
     }
